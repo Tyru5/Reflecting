@@ -24,6 +24,17 @@ using Eigen::Vector3d;
 using Eigen::Vector3i;
 using Eigen::RowVector3i;
 
+// Structure that returns best_pt, best_sphere
+typedef struct a{
+  
+  Sphere bs;
+  double best_t = numeric_limits<double>::max(); // max double
+  Vector3d best_point;
+  bool ics = false;
+  
+}bestSphere;
+
+
 class Camera{
 
  public:
@@ -41,9 +52,8 @@ class Camera{
   void buildRM();
   void calculateRays();
 
-  void print_ts(const vector< vector<double>>& vect);
-  void find_tmin_tmax( vector< vector<double>>& tvals);
-  
+  // bestSphere closestIntersect( const Ray& ray, const vector<spheres>& spheres);
+
   // Where the magic happens:  
   RowVector3i mapColour(const Color& bc);
   void writeSpheresAndModels( const string& out_file );
@@ -53,6 +63,10 @@ class Camera{
   
   void rayTriangleIntersection();
   void computeDist( const Face& current_face );
+
+  bestSphere closestIntersect( const Ray& ray );
+
+  Color rayTrace( const Ray& ray, Color accum, Color refatt, int level);
 
   void print_ptof();
   

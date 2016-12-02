@@ -18,7 +18,7 @@ using namespace std;
 using Eigen::Vector3d;
 
 // Macros:
-#define DEBUG true
+#define DEBUG false
 
 
 int Sphere::counter = 0;
@@ -59,7 +59,7 @@ bool Sphere::raySphereIntersection( const Ray& ray ){
     // cout << "intersection point =" << ptos.transpose() << endl;
     
   }
-
+  
   return true;
   
 }
@@ -91,7 +91,7 @@ tuple<bool, Color> Sphere::getRaySphereRGB( const Ray& ray, const Color& ambl, c
       // cout << "toL = " << toL.transpose() << " with associated ptos = " << ptos.transpose() << endl;
     
       if( snrm.dot( toL ) > 0.0 ){ // meaning there is actually an angle
-
+	
 	color += mat_props * lights[z].energy * snrm.dot( toL );
 	// cout << "color2 = " << color;
 	Vector3d toC  = ray.origin - ptos; toC = toC / toC.norm();

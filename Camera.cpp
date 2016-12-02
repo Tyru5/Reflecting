@@ -95,13 +95,14 @@ void Camera::parseScene( const string& scene_file ){
   // Parsing the actual scene file:
   stringstream iss;
   string identifier;
-  double red,green,blue;
+  double red,green,blue,rR,rG,rB;
   
   /*For lightSources*/
   Color eX;
 
   /*For Sphere*/
   Color materialX;
+  Color ref_cX;
   double radiusX;
 
   /*For models*/
@@ -138,10 +139,11 @@ void Camera::parseScene( const string& scene_file ){
 
     else if( identifier == SPHERE_KEYWORD){
       // Following the light sources come zero or more spheres:
-      iss >> x >> y >> z >> radiusX >> red >> green >> blue;
+      iss >> x >> y >> z >> radiusX >> red >> green >> blue >> rR >> rG >> rB;
       Vector3d centerX( x,y,z );
       materialX = Color( red,green,blue );
-      Sphere sphereX( centerX, radiusX, materialX  );
+      ref_cX = Color( rR, rG, rB );
+      Sphere sphereX( centerX, radiusX, materialX, ref_cX  );
       addSphere( sphereX );
     }
     
@@ -397,7 +399,6 @@ void Camera::rayTriangleIntersection(){
   ts = vector< vector< double > >(width, vector<double>( height, -1.0 )  );
   ptof= vector< vector< Color > >(width, vector<Color>( height, Color() )  );
 
-  // print_ts(ts);
   // cout << "before" << endl;
   // print_ptof();
   
@@ -406,7 +407,6 @@ void Camera::rayTriangleIntersection(){
     computeDist( modelObject_list[0].getFace(i) ); // for now, only one model so 0th model in the vector of models
   }
 
-  // print_ts(ts);
   // cout << "after " << endl;
   // print_ptof();
   // cout << "Polygon count (faces) : " << number_of_faces << endl;
@@ -429,7 +429,7 @@ RowVector3i Camera::mapColour( const Color &c ){
   colorRGB(1) = green;
   colorRGB(2) = blue;
   
-  // cout << colorRGB << endl;
+  cout << colorRGB << endl;
   return colorRGB;
 
 }
@@ -501,16 +501,15 @@ void Camera::writeSpheres( const string& out_file ){
   Vector3i rgb(3);
   for(int i = 0; i < width; i++ ){
     for(int c = 0; c < height; c++ ){
-      for(int sp = 0; sp < static_cast<int>(spheres.size()); sp++){
 
-	tuple<bool, Color> res = spheres[sp].getRaySphereRGB( Rays[i][height - c -1], ambient_color, lightSource_list );
-	if( get<0>(res) ){
-	  sphere_pixs[i][c] = mapColour( get<1>(res) );
-	}
-	
-      }
+      Color final_color = Color(0.0,0.0,0.0);
+      Color refatt = Color(1.0,1.0,1.0);
+      Color pix = rayTrace( Rays[i][height - c -1], final_color, refatt, 6);
+      // cout << "pix = " << pix;
+      sphere_pixs[i][c] = mapColour( pix );
+
     }
-  }
+  } // end of rays
 
   // now writing out:
   for(int i = 0; i < width; i++, out << endl){
@@ -562,23 +561,109 @@ void Camera::writeModels( const string& out_file ){
 }
 
 
-// ==================HELPER FUNCTIONS=========================
-void Camera::find_tmin_tmax(std::vector<std::vector<double>>& tvals){
+Color Camera::rayTrace( const Ray& ray, Color accum, Color refatt, int level){
 
-  for(int i = 0; i < width; i++){
-    for(int c = 0; c < height; c++){
+  /*
+    Given a certain ray-sphere intersection, compute the RGB off the surface:
+  */
 
-      if(tvals[i][c] >= 0){
+  bestSphere ret = closestIntersect( ray );
 
-	if(tvals[i][c] < tmin) tmin = tvals[i][c];
-	if(tvals[i][c] > tmax) tmax = tvals[i][c];
+  double alpha = 16.0;
+  Color color; // to start off, a blank color;
+  if( ret.ics ){
+
+    Vector3d N = ret.best_point - ret.bs.getCenter(); N = N/N.norm(); // JUST UPDATED IT!
+    // if(DEBUG) cout << "the snrm on sphere is = " << snrm.transpose() << " with ptos = " << ptos.transpose() << endl;
+    // Initial condition of the ambient lighting of the scene:
+    color = ambient_color * ret.bs.getMatProps();
+    // cout << color;
+
+    // cout << lights.size() << endl;
+    for( int z = 0; z < static_cast<int>( lightSource_list.size() ); z++){
+    
+      Vector3d lp( lightSource_list[z].position(0), lightSource_list[z].position(1), lightSource_list[z].position(2) );
+      // if(DEBUG) cout << "light position = " << lp.transpose() << endl;
+    
+      Vector3d toL = lp - ret.best_point; toL = toL/toL.norm(); // unit length
+      // cout << "toL = " << toL.transpose() << " with associated ptos = " << ptos.transpose() << endl;    
+      if( N.dot( toL ) > 0.0 ){ // meaning there is actually an angle
+
+	color += ret.bs.getMatProps() * lightSource_list[z].energy * N.dot( toL );
+	// cout << "color2 = " << color;
+	Vector3d toC  = ray.origin - ret.best_point; toC = toC / toC.norm();
+	// cout << "toC = " << toC.transpose() << " with associated ptos = " << ptos.transpose() << endl;
+	
+	Vector3d spR  = (2 * N.dot( toL ) * N) - toL;
+	// cout << "spR = " << spR.transpose() << " with ptos of = " << ptos.transpose() << endl;
+
+	color += ret.bs.getMatProps()* lightSource_list[z].energy *  pow( toC.dot( spR ), alpha );
+	// cout << "color3 = " << color << "with ptos of = " << ptos.transpose() << endl;
 	
       }
       
     }
+
+    accum += refatt + color;
+
+    if( level > 0 ){
+      Vector3d Uinv = -1 * ray.direction;
+      Vector3d refR = ( (2 * N.dot( Uinv ) * N) - Uinv );
+      rayTrace( Ray( ret.best_point, refR), accum, (ret.bs.getRC() * refatt), (level - 1) );
+    }
+    
   }
-  
+
+  return accum;
+
 }
+
+
+bestSphere Camera::closestIntersect( const Ray& ray ){
+
+  bestSphere res;
+
+  for(int i = 0; i < static_cast<int>(spheres.size()); i++){
+  
+    /*
+      Using the Faster Method algorithm presented in class
+      Returns the closest intersection point by defualt.
+    */
+
+    Sphere current_sphere = spheres[i];
+
+    Vector3d ray_origin = ray.origin;
+    Vector3d ray_direction = ray.direction;
+    Vector3d Tv = current_sphere.getCenter() - ray_origin;
+    // if(DEBUG) cout << "base to center = \n" << Tv << endl;
+    double v    = Tv.dot( ray_direction );
+    double csq  = Tv.dot(Tv);
+    double disc = ( pow( current_sphere.getRadius(), 2.0 ) - (csq - pow(v, 2.0) ) );
+    // if(DEBUG) cout << "v,csq,disc = " << v << " " << csq << " " << disc << endl;
+    if( disc > 0.0 ){
+      double tval = v - sqrt(disc);
+
+      if( (tval < res.best_t) && (tval > 0.00001) ){
+	res.best_t = tval;
+	res.bs = spheres[i];
+	res.best_point = ray.origin + tval * ray.direction;
+	res.ics = true;
+      }
+
+    } // end of disc-if
+    else{
+      res.ics = false;
+      // continue;
+    }
+  
+  } // end of for loop;  
+
+  return res;
+
+}
+
+
+// ==================HELPER FUNCTIONS=========================
 
 // pa4
 void Camera::printPixs() const{

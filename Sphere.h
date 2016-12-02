@@ -28,12 +28,14 @@ class Sphere {
   center( Vector3d() )
  ,radius( 0.0 )
  ,mat_props( 0.0,0.0,0.0 )
+ ,ref_c( 0.0,0.0,0.0)
  {counter++;};
 
- Sphere( const Vector3d& _center, const double& _radius, const Color& _mat_props ):
+ Sphere( const Vector3d& _center, const double& _radius, const Color& _mat_props, const Color& _ref_c ):
   center( _center )
  ,radius( _radius )
  ,mat_props( _mat_props )
+ ,ref_c( _ref_c )
  {counter++;};
   
   // Member functions:
@@ -52,11 +54,20 @@ class Sphere {
     return radius;
   }
 
+  const Color getMatProps() const{
+    return mat_props;
+  }
+
+  const Color getRC() const{
+    return ref_c;
+  }
+
   // copy assignment operator: 1 of the BIG THREE
   const Sphere& operator= (const Sphere& rhs){
     if( this != &rhs ){ // Standard alias test...
       center = rhs.center;
       radius = rhs.radius;
+      mat_props = rhs.mat_props;
     }
     return *this;
   }
@@ -68,7 +79,8 @@ class Sphere {
   Vector3d center;
   double radius;
   Color mat_props;
-
+  Color ref_c;
+  
   double d;
   double t;
   Vector3d ptos;
