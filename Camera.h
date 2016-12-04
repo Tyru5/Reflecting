@@ -27,8 +27,8 @@ using Eigen::RowVector3i;
 // Structure that returns best_pt, best_sphere
 typedef struct a{
   
-  Sphere bs;
-  double best_t = numeric_limits<double>::max(); // max double
+  Sphere* bs;
+  double best_t = numeric_limits<double>::infinity(); // max double
   Vector3d best_point;
   bool ics = false;
   

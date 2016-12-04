@@ -420,6 +420,8 @@ RowVector3i Camera::mapColour( const Color &c ){
 
   int red,green,blue;
   RowVector3i colorRGB(0,0,0);
+
+  if( c.red == 0.0 && c.green == 0.0 && c.blue == 0.0 ) return colorRGB; // just added
   
   red   = max(0.0, min(255.0,round(255.0 * c.red )));
   green = max(0.0, min(255.0,round(255.0 * c.green)));
@@ -429,7 +431,7 @@ RowVector3i Camera::mapColour( const Color &c ){
   colorRGB(1) = green;
   colorRGB(2) = blue;
   
-  cout << colorRGB << endl;
+  // cout << colorRGB << endl;
   return colorRGB;
 
 }
@@ -498,12 +500,13 @@ void Camera::writeSpheres( const string& out_file ){
   out << width << " " << height << " 255" << endl;
 
   // Map pixel, get only one *very important :: talked with jake*
-  Vector3i rgb(3);
   for(int i = 0; i < width; i++ ){
     for(int c = 0; c < height; c++ ){
-
+      // cout << "i =  " << i << endl;
+      // cout << "j =  " << c << endl;
       Color final_color = Color(0.0,0.0,0.0);
       Color refatt = Color(1.0,1.0,1.0);
+      // cout << Rays[i][height - c -1].origin.transpose() << endl;;
       Color pix = rayTrace( Rays[i][height - c -1], final_color, refatt, 6);
       // cout << "pix = " << pix;
       sphere_pixs[i][c] = mapColour( pix );
@@ -561,68 +564,11 @@ void Camera::writeModels( const string& out_file ){
 }
 
 
-Color Camera::rayTrace( const Ray& ray, Color accum, Color refatt, int level){
-
-  /*
-    Given a certain ray-sphere intersection, compute the RGB off the surface:
-  */
-
-  bestSphere ret = closestIntersect( ray );
-
-  double alpha = 16.0;
-  Color color; // to start off, a blank color;
-  if( ret.ics ){
-
-    Vector3d N = ret.best_point - ret.bs.getCenter(); N = N/N.norm(); // JUST UPDATED IT!
-    // if(DEBUG) cout << "the snrm on sphere is = " << snrm.transpose() << " with ptos = " << ptos.transpose() << endl;
-    // Initial condition of the ambient lighting of the scene:
-    color = ambient_color * ret.bs.getMatProps();
-    // cout << color;
-
-    // cout << lights.size() << endl;
-    for( int z = 0; z < static_cast<int>( lightSource_list.size() ); z++){
-    
-      Vector3d lp( lightSource_list[z].position(0), lightSource_list[z].position(1), lightSource_list[z].position(2) );
-      // if(DEBUG) cout << "light position = " << lp.transpose() << endl;
-    
-      Vector3d toL = lp - ret.best_point; toL = toL/toL.norm(); // unit length
-      // cout << "toL = " << toL.transpose() << " with associated ptos = " << ptos.transpose() << endl;    
-      if( N.dot( toL ) > 0.0 ){ // meaning there is actually an angle
-
-	color += ret.bs.getMatProps() * lightSource_list[z].energy * N.dot( toL );
-	// cout << "color2 = " << color;
-	Vector3d toC  = ray.origin - ret.best_point; toC = toC / toC.norm();
-	// cout << "toC = " << toC.transpose() << " with associated ptos = " << ptos.transpose() << endl;
-	
-	Vector3d spR  = (2 * N.dot( toL ) * N) - toL;
-	// cout << "spR = " << spR.transpose() << " with ptos of = " << ptos.transpose() << endl;
-
-	color += ret.bs.getMatProps()* lightSource_list[z].energy *  pow( toC.dot( spR ), alpha );
-	// cout << "color3 = " << color << "with ptos of = " << ptos.transpose() << endl;
-	
-      }
-      
-    }
-
-    accum += refatt + color;
-
-    if( level > 0 ){
-      Vector3d Uinv = -1 * ray.direction;
-      Vector3d refR = ( (2 * N.dot( Uinv ) * N) - Uinv );
-      rayTrace( Ray( ret.best_point, refR), accum, (ret.bs.getRC() * refatt), (level - 1) );
-    }
-    
-  }
-
-  return accum;
-
-}
-
-
 bestSphere Camera::closestIntersect( const Ray& ray ){
 
   bestSphere res;
 
+  // int counter = 0;
   for(int i = 0; i < static_cast<int>(spheres.size()); i++){
   
     /*
@@ -631,7 +577,9 @@ bestSphere Camera::closestIntersect( const Ray& ray ){
     */
 
     Sphere current_sphere = spheres[i];
-
+    // counter++;
+    // cout << "Sphere with radius = " << current_sphere.getRadius() << endl;
+    
     Vector3d ray_origin = ray.origin;
     Vector3d ray_direction = ray.direction;
     Vector3d Tv = current_sphere.getCenter() - ray_origin;
@@ -639,13 +587,14 @@ bestSphere Camera::closestIntersect( const Ray& ray ){
     double v    = Tv.dot( ray_direction );
     double csq  = Tv.dot(Tv);
     double disc = ( pow( current_sphere.getRadius(), 2.0 ) - (csq - pow(v, 2.0) ) );
-    // if(DEBUG) cout << "v,csq,disc = " << v << " " << csq << " " << disc << endl;
+    // cout << "disc = " << disc << endl;
     if( disc > 0.0 ){
       double tval = v - sqrt(disc);
-
+      // cout << "tval = " << tval << endl;
+      // cout << res.best_t << endl;
       if( (tval < res.best_t) && (tval > 0.00001) ){
 	res.best_t = tval;
-	res.bs = spheres[i];
+	res.bs = &current_sphere;
 	res.best_point = ray.origin + tval * ray.direction;
 	res.ics = true;
       }
@@ -658,10 +607,68 @@ bestSphere Camera::closestIntersect( const Ray& ray ){
   
   } // end of for loop;  
 
+  // cout << counter << endl;
+
   return res;
 
 }
 
+Color Camera::rayTrace( const Ray& ray, Color accum, Color refatt, int level){
+
+  /*
+    Given a certain ray-sphere intersection, compute the RGB off the surface:
+  */
+
+  bestSphere ret = closestIntersect( ray );
+
+  // double alpha = 16.0;
+  // Color color; // to start off, a blank color;
+  // if( ret.ics ){
+
+  //   Vector3d N = ret.best_point - ret.bs.getCenter(); N = N/N.norm(); // JUST UPDATED IT!
+  //   // if(DEBUG) cout << "the snrm on sphere is = " << snrm.transpose() << " with ptos = " << ptos.transpose() << endl;
+  //   // Initial condition of the ambient lighting of the scene:
+  //   color = ambient_color * ret.bs.getMatProps();
+  //   // cout << color;
+
+  //   // cout << lights.size() << endl;
+  //   for( int z = 0; z < static_cast<int>( lightSource_list.size() ); z++){
+    
+  //     Vector3d lp( lightSource_list[z].position(0), lightSource_list[z].position(1), lightSource_list[z].position(2) );
+  //     // if(DEBUG) cout << "light position = " << lp.transpose() << endl;
+    
+  //     Vector3d toL = lp - ret.best_point; toL = toL/toL.norm(); // unit length
+  //     // cout << "toL = " << toL.transpose() << " with associated ptos = " << ptos.transpose() << endl;    
+  //     if( N.dot( toL ) > 0.0 ){ // meaning there is actually an angle
+
+  // 	color += ret.bs.getMatProps() * lightSource_list[z].energy * N.dot( toL );
+  // 	// cout << "color2 = " << color;
+  // 	Vector3d toC  = ray.origin - ret.best_point; toC = toC / toC.norm();
+  // 	// cout << "toC = " << toC.transpose() << " with associated ptos = " << ptos.transpose() << endl;
+	
+  // 	Vector3d spR  = (2 * N.dot( toL ) * N) - toL;
+  // 	// cout << "spR = " << spR.transpose() << " with ptos of = " << ptos.transpose() << endl;
+
+  // 	color += ret.bs.getMatProps()* lightSource_list[z].energy *  pow( toC.dot( spR ), alpha );
+  // 	// cout << "color3 = " << color << "with ptos of = " << ptos.transpose() << endl;
+	
+  //     }
+      
+  //   }
+
+  //   accum += refatt + color;
+
+  //   if( level > 0 ){
+  //     Vector3d Uinv = -1 * ray.direction;
+  //     Vector3d refR = ( (2 * N.dot( Uinv ) * N) - Uinv );
+  //     rayTrace( Ray( ret.best_point, refR), accum, (ret.bs.getRC() * refatt), (level - 1) );
+  //   }
+    
+  // }
+
+  // return accum;
+
+} 
 
 // ==================HELPER FUNCTIONS=========================
 
