@@ -502,14 +502,14 @@ void Camera::writeSpheres( const string& out_file ){
   // Map pixel, get only one *very important :: talked with jake*
   for(int i = 0; i < width; i++ ){
     for(int c = 0; c < height; c++ ){
-      // cout << "i =  " << i << endl;
-      // cout << "j =  " << c << endl;
+
       Color final_color = Color(0.0,0.0,0.0);
       Color refatt = Color(1.0,1.0,1.0);
-      // cout << Rays[i][height - c -1].origin.transpose() << endl;;
-      Color pix = rayTrace( Rays[i][height - c -1], final_color, refatt, 6);
+      int level = 6;
+      Color pix = rayTrace( Rays[i][height - c -1], final_color, refatt, level);
       // cout << "pix = " << pix;
       sphere_pixs[i][c] = mapColour( pix );
+      // cout << "pix[i,j] = " << sphere_pixs[i][c] << endl;
 
     }
   } // end of rays
@@ -564,111 +564,128 @@ void Camera::writeModels( const string& out_file ){
 }
 
 
-bestSphere Camera::closestIntersect( const Ray& ray ){
+void Camera::closestIntersect( const Ray& ray, Sphere& current_sphere, bestSphere& ret ){
 
-  bestSphere res;
 
-  // int counter = 0;
-  for(int i = 0; i < static_cast<int>(spheres.size()); i++){
+  /*
+    Using the Faster Method algorithm presented in class
+    Returns the closest intersection point by defualt.
+  */
   
-    /*
-      Using the Faster Method algorithm presented in class
-      Returns the closest intersection point by defualt.
-    */
+  // cout << "Sphere with radius = " << current_sphere.getRadius() << endl;
+  
+  Vector3d ray_origin = ray.origin;
+  Vector3d ray_direction = ray.direction;
+  Vector3d Tv = current_sphere.getCenter() - ray_origin;
+  double v    = Tv.dot( ray_direction );
+  double csq  = Tv.dot(Tv);
+  double disc = ( pow( current_sphere.getRadius(), 2.0 ) - (csq - pow(v, 2.0) ) );
+  if( disc > 0.0 ){
+    double tval = v - sqrt(disc);
 
-    Sphere current_sphere = spheres[i];
-    // counter++;
-    // cout << "Sphere with radius = " << current_sphere.getRadius() << endl;
-    
-    Vector3d ray_origin = ray.origin;
-    Vector3d ray_direction = ray.direction;
-    Vector3d Tv = current_sphere.getCenter() - ray_origin;
-    // if(DEBUG) cout << "base to center = \n" << Tv << endl;
-    double v    = Tv.dot( ray_direction );
-    double csq  = Tv.dot(Tv);
-    double disc = ( pow( current_sphere.getRadius(), 2.0 ) - (csq - pow(v, 2.0) ) );
-    // cout << "disc = " << disc << endl;
-    if( disc > 0.0 ){
-      double tval = v - sqrt(disc);
-      // cout << "tval = " << tval << endl;
-      // cout << res.best_t << endl;
-      if( (tval < res.best_t) && (tval > 0.00001) ){
-	res.best_t = tval;
-	res.bs = &current_sphere;
-	res.best_point = ray.origin + tval * ray.direction;
-	res.ics = true;
-      }
-
-    } // end of disc-if
-    else{
-      res.ics = false;
-      // continue;
+    if( (tval < ret.best_t) && (tval > 0.00001) ){
+      ret.best_t = tval;
+      ret.bs = &current_sphere;
+      ret.best_point = ray.origin + tval * ray.direction;
+      ret.ics = true;
     }
+    return;
+  } // end of disc-if
+  else{
+    ret.ics = false;
+    return;
+  }
   
-  } // end of for loop;  
+}
 
+
+void Camera::find_rayBSPH( const Ray& ray, bestSphere& ret ){
+
+  bool temp = false;
+  // int counter = 0;
+  for(int i = 0; i < static_cast<int>(spheres.size());i++){
+    // counter++;
+    closestIntersect( ray, spheres[i], ret );
+    if( ret.ics ) temp = true;
+  }
+
+  ret.ics = temp; // update value
   // cout << counter << endl;
-
-  return res;
-
+  
 }
 
 Color Camera::rayTrace( const Ray& ray, Color accum, Color refatt, int level){
-
+  // cout << "level =  " << level << endl;
   /*
     Given a certain ray-sphere intersection, compute the RGB off the surface:
   */
 
-  bestSphere ret = closestIntersect( ray );
+  /*
+  bestSphere ret = {
+    nullptr,  // sphere
+    numeric_limits<double>::infinity(),// best_t
+    Vector3d(0.0,0.0,0.0), // best_point
+    false,  // ics
+  };
+  */
 
-  // double alpha = 16.0;
-  // Color color; // to start off, a blank color;
-  // if( ret.ics ){
 
-  //   Vector3d N = ret.best_point - ret.bs.getCenter(); N = N/N.norm(); // JUST UPDATED IT!
-  //   // if(DEBUG) cout << "the snrm on sphere is = " << snrm.transpose() << " with ptos = " << ptos.transpose() << endl;
-  //   // Initial condition of the ambient lighting of the scene:
-  //   color = ambient_color * ret.bs.getMatProps();
-  //   // cout << color;
+  bestSphere ret;
+  find_rayBSPH( ray, ret ); // pass struct by reference to populate fields
+  double alpha = 16.0;
+  Color color; // to start off, a blank color;
 
-  //   // cout << lights.size() << endl;
-  //   for( int z = 0; z < static_cast<int>( lightSource_list.size() ); z++){
+  if( ret.ics ){
+    // cout << "in = " << ret.best_t << endl;
+    Vector3d N = ret.best_point - ret.bs->getCenter(); N = N/N.norm(); // JUST UPDATED IT!
+    // cout << "N = " << N.transpose() << endl;
+
+    // Initial condition of the ambient lighting of the scene:
+    color = ambient_color * ret.bs->getMatProps();
+    // cout << color;
+
+    // cout << lights.size() << endl;
+    for( int z = 0; z < static_cast<int>( lightSource_list.size() ); z++){
     
-  //     Vector3d lp( lightSource_list[z].position(0), lightSource_list[z].position(1), lightSource_list[z].position(2) );
-  //     // if(DEBUG) cout << "light position = " << lp.transpose() << endl;
+      Vector3d lp( lightSource_list[z].position(0), lightSource_list[z].position(1), lightSource_list[z].position(2) );
+      // if(DEBUG) cout << "light position = " << lp.transpose() << endl;
     
-  //     Vector3d toL = lp - ret.best_point; toL = toL/toL.norm(); // unit length
-  //     // cout << "toL = " << toL.transpose() << " with associated ptos = " << ptos.transpose() << endl;    
-  //     if( N.dot( toL ) > 0.0 ){ // meaning there is actually an angle
+      Vector3d toL = lp - ret.best_point; toL = toL/toL.norm(); // unit length
+      // cout << "toL = " << toL.transpose() << " with associated ptos = " << ptos.transpose() << endl;    
+      if( N.dot( toL ) > 0.0 ){ // meaning there is actually an angle
 
-  // 	color += ret.bs.getMatProps() * lightSource_list[z].energy * N.dot( toL );
-  // 	// cout << "color2 = " << color;
-  // 	Vector3d toC  = ray.origin - ret.best_point; toC = toC / toC.norm();
-  // 	// cout << "toC = " << toC.transpose() << " with associated ptos = " << ptos.transpose() << endl;
+  	color += ret.bs->getMatProps() * lightSource_list[z].energy * N.dot( toL );
+  	// cout << color;
+  	Vector3d toC  = ray.origin - ret.best_point; toC = toC / toC.norm();
+  	// cout << "toC = [" << toC.transpose() << "]" << endl;
 	
-  // 	Vector3d spR  = (2 * N.dot( toL ) * N) - toL;
-  // 	// cout << "spR = " << spR.transpose() << " with ptos of = " << ptos.transpose() << endl;
+  	Vector3d spR  = ( (2 * N.dot( toL ) * N) - toL ); spR = spR/spR.norm(); // just added
+  	// cout << "spR = " << spR.transpose() << endl;
 
-  // 	color += ret.bs.getMatProps()* lightSource_list[z].energy *  pow( toC.dot( spR ), alpha );
-  // 	// cout << "color3 = " << color << "with ptos of = " << ptos.transpose() << endl;
+  	color += ret.bs->getMatProps()* lightSource_list[z].energy *  pow( toC.dot( spR ), alpha );
+  	// cout << color;
 	
-  //     }
+      }
       
-  //   }
+    }
 
-  //   accum += refatt + color;
+    accum += refatt * color; // just changed this
+    // cout << "accum = " << accum
 
-  //   if( level > 0 ){
-  //     Vector3d Uinv = -1 * ray.direction;
-  //     Vector3d refR = ( (2 * N.dot( Uinv ) * N) - Uinv );
-  //     rayTrace( Ray( ret.best_point, refR), accum, (ret.bs.getRC() * refatt), (level - 1) );
-  //   }
+    if( level > 0 ){
+      Vector3d Uinv = -1 * ray.direction;
+      Vector3d refR = ( (2 * N.dot( Uinv ) * N) - Uinv ); refR = refR / refR.norm(); // just added
+      // cout << "refR = " << refR.transpose() << endl;
+      // cout << ret.bs->getRC(); debuggin' THIS NOW WORKS
+      rayTrace( Ray( ret.best_point, refR), accum, (ret.bs->getRC() * refatt), (level - 1) );
+    }
     
-  // }
+  } // end of if
 
-  // return accum;
+  return accum;
 
-} 
+
+}
 
 // ==================HELPER FUNCTIONS=========================
 
