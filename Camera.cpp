@@ -502,13 +502,13 @@ void Camera::writeSpheres( const string& out_file ){
   // Map pixel, get only one *very important :: talked with jake*
   for(int i = 0; i < width; i++ ){
     for(int c = 0; c < height; c++ ){
-
+      
       Color final_color = Color(0.0,0.0,0.0);
       Color refatt = Color(1.0,1.0,1.0);
       int level = 6;
-      Color pix = rayTrace( Rays[i][height - c -1], final_color, refatt, level);
+      final_color = rayTrace( Rays[i][height - c -1], final_color, refatt, level);
       // cout << "pix = " << pix;
-      sphere_pixs[i][c] = mapColour( pix );
+      sphere_pixs[i][c] = mapColour( final_color );
       // cout << "pix[i,j] = " << sphere_pixs[i][c] << endl;
 
     }
@@ -614,7 +614,7 @@ void Camera::find_rayBSPH( const Ray& ray, bestSphere& ret ){
   
 }
 
-Color Camera::rayTrace( const Ray& ray, Color accum, Color refatt, int level){
+Color Camera::rayTrace( const Ray& ray, Color& accum, Color& refatt, int level){
   // cout << "level =  " << level << endl;
   /*
     Given a certain ray-sphere intersection, compute the RGB off the surface:
@@ -636,7 +636,7 @@ Color Camera::rayTrace( const Ray& ray, Color accum, Color refatt, int level){
   Color color; // to start off, a blank color;
 
   if( ret.ics ){
-    // cout << "in = " << ret.best_t << endl;
+    // cout << "in = " << ret.best_point.transpose() << endl;
     Vector3d N = ret.best_point - ret.bs->getCenter(); N = N/N.norm(); // JUST UPDATED IT!
     // cout << "N = " << N.transpose() << endl;
 
@@ -662,7 +662,7 @@ Color Camera::rayTrace( const Ray& ray, Color accum, Color refatt, int level){
   	Vector3d spR  = ( (2 * N.dot( toL ) * N) - toL ); spR = spR/spR.norm(); // just added
   	// cout << "spR = " << spR.transpose() << endl;
 
-  	color += ret.bs->getMatProps()* lightSource_list[z].energy *  pow( toC.dot( spR ), alpha );
+  	color += (ret.bs->getMatProps()* lightSource_list[z].energy) * pow( (toC.dot( spR )), alpha );
   	// cout << color;
 	
       }
@@ -670,18 +670,23 @@ Color Camera::rayTrace( const Ray& ray, Color accum, Color refatt, int level){
     }
 
     accum += refatt * color; // just changed this
-    // cout << "accum = " << accum
+    // cout << "accum = " << accum;
 
     if( level > 0 ){
-      Vector3d Uinv = -1 * ray.direction;
+      // cout << "in here " << endl;
+      Vector3d Uinv = -1 * ray.direction; // seems to not work... 
+      // cout << "Uinv = " << Uinv.transpose() << endl;
       Vector3d refR = ( (2 * N.dot( Uinv ) * N) - Uinv ); refR = refR / refR.norm(); // just added
       // cout << "refR = " << refR.transpose() << endl;
       // cout << ret.bs->getRC(); debuggin' THIS NOW WORKS
-      rayTrace( Ray( ret.best_point, refR), accum, (ret.bs->getRC() * refatt), (level - 1) );
+      Ray newRay = Ray( ret.best_point, refR );
+      Color new_refatt = (ret.bs->getRC() * refatt);
+      rayTrace( newRay, accum, new_refatt, (level - 1) );
     }
     
   } // end of if
 
+  // cout << accum;
   return accum;
 
 

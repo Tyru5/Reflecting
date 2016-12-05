@@ -71,7 +71,7 @@ class Camera{
   void closestIntersect( const Ray& ray, Sphere& current_sphere, bestSphere& ret );
   void find_rayBSPH( const Ray& ray, bestSphere& ret );
 
-  Color rayTrace( const Ray& ray, Color accum, Color refatt, int level);
+  Color rayTrace( const Ray& ray, Color& accum, Color& refatt, int level);
 
   void print_ptof();
   
