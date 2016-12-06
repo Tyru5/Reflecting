@@ -1,0 +1,21 @@
+eye 3 3 6
+look 3 3 0
+up 0 1 0
+d 2
+bounds -1 -1 1 1
+res 4000 4000
+#ambient
+ambient 0.0 0.0 0.0
+#lights
+light 3 3 2 1 0.8 0.8 0.8
+light 0 6 0 1 1.0 1.0 1.0
+light 6 6 0 1 1.0 0.0 1.0
+light 3 0 0 1 1.0 1.0 1.0
+#left
+sphere 0.5 2 0 2 1.0 0.0 0.0 1.0 1.0 1.0
+#top
+sphere 3 5.5 0 2 0.0 0.8 0.0 1.0 1.0 1.0
+#right
+sphere 5.5 2 0 2 0.0 0.0 1.0 1.0 1.0 1.0
+#farout
+sphere 3 3 -5 2 0.1 0.1 0.1 1.0 1.0 1.0
