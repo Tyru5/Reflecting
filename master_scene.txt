@@ -3,12 +3,12 @@ look 3 3 0
 up 0 1 0
 d 2
 bounds -1 -1 1 1
-res 2000 2000
+res 2500 2500
 #ambient
 ambient 0.0 0.0 0.0
 #lights
-light 3 3 2 1 0.8 0.8 0.8
-light 3 0 0 1 0.5 0.0 0.5
+light 3 3 1 1 0.8 0.8 0.8
+light 3 3 -5 1 0.5 0.0 0.5
 #left
 sphere 0.5 2 0 2 1.0 0.0 0.0 1.0 1.0 1.0
 #top
