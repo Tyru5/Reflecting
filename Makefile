@@ -1,5 +1,5 @@
 # Tyrus Malmstrom
-# Makefile for P4 assignment
+# Makefile for P5 assignment
 # CS410 :: intro to graphics
 
 CXX		= g++
@@ -59,4 +59,4 @@ clean:
 
 package:
 	@echo "Packaging up project directory..."
-	tar -cvf pa4.tar *.cpp *.h ./Eigen Makefile *.txt *.mtl *.obj
+	tar -cvf pa5.tar *.cpp *.h ./Eigen Makefile *.txt *.mtl *.obj
