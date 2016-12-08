@@ -58,8 +58,31 @@ As taken from their official webpage,
 ~More information may be found here: https://syoyo.github.io/tinyobjloader/
 
 
+*****************************************************************************************************
+
+Lastly, I also used another third party library called png++. I used this library to convert my ppm images into png images.
+
+As taken from their official webpage, 
+"This is the home of png++, a C++ wrapper for libpng library." PNG++ aims to provide simple yet powerful C++ interface to libpng, the PNG reference implementation library.
+
+                                          ~Overview~
+- Using raw libpng in C++ may impose serious challenge since lots of precautions must be taken to handle initialization/deinitialization of control structures as well as handling errors correctly. 
+  With png++ you can read or write PNG images just in a single line of C++ code:
+
+  ->png::image< png::rgb_pixel > image("input.png");
+  image.write("output.png");
+  The code reads an image from the file named "input.png", then writes the image to a file named "output.png". In this example png++ does all the transformations needed to create adequate in-memory RGB representation of the image (well, in most cases it simply instructs libpng to do so).
+
+  The image in "input.png" can be RGB image, or it might be grayscale or even indexed image with a palette -- png++ will just convert any input to RGB format. 
+  However, for technical reasons such automatic transformation is supported for RGB and Grayscale color types only. Optionally there may be an alpha channel in the target color space (RGBA and Gray+Alpha respectively).
+
+~More information may be found here: http://www.nongnu.org/pngpp/
+
+
 Best,
 Tyrus Malmstrom.
+
+~Awesome~
   
 */
 
@@ -77,7 +100,7 @@ int main(int argc, char *argv[]){
   Camera camera;
 
   /* Code to handle P5 master scene 'file' */
-  if(argc == 1){ camera.parseScene("master_scene.txt"); camera.buildRM(); camera.calculateRays(); camera.writeMasterScene(); exit(1);}       
+  if(argc == 1){ camera.parseScene("master_scene.txt"); camera.buildRM(); camera.calculateRays(); camera.writeMasterScene();exit(1);}       
 
   camera.parseScene( argv[1] ); // this function does a whole lot, look at the source code for more details.  
   camera.buildRM();
