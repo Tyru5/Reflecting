@@ -508,11 +508,11 @@ void Camera::writeSpheres( const string& out_file ){
       final_color = rayTrace( Rays[i][height - c -1], final_color, refatt, level);
       // image[y][x] = png::rgb_pixel(x, y, x + y);
       RowVector3i rgb = mapColour( final_color );
-      image[i][c] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );
+      image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );
 
     }
   } // end of rays
-  image.write("masterwork.png");
+  image.write( out_file );
   
 
   // Using PPM:
