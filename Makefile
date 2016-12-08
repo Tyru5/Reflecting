@@ -15,7 +15,7 @@ EXE 		= raytracer
 all: clean raytracer #by default, make my makefile clean up the project directory, just to be safe.
 
 raytracer: $(OBJS)
-	$(CXX) $(LDFLAGS) $(OBJS) -o raytracer
+	$(CXX) $(OBJS) $(LDFLAGS) -o raytracer # ok... so switching the LDFLAGS so that they are behind the object files made it compile successfully!
 	@echo "-- Success!"
 
 raytracer.o: raytracer.cpp
