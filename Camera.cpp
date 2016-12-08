@@ -489,12 +489,34 @@ void Camera::writeSpheresAndModels( const string& out_file ){
 
 void Camera::writeSpheres( const string& out_file ){
 
-  ofstream out( out_file );
-  if( !out ) cout << "Sorry! Couldn't write out the file: " << out_file << endl;
+  // ofstream out( out_file );
+  // if( !out ) cout << "Sorry! Couldn't write out the file: " << out_file << endl;
 
-  sphere_pixs = vector< vector<RowVector3i> >(width, vector<RowVector3i>(height, RowVector3i(0,0,0) ) ); // pretty awesome
+  // sphere_pixs = vector< vector<RowVector3i> >(width, vector<RowVector3i>(height, RowVector3i(0,0,0) ) ); // pretty awesome
   // printPixs();
+
+
+
+  // Using png++:
+  png::image< png::rgb_pixel > image( width, height );
+  for (png::uint_32 i = 0; i < image.get_width(); ++i){
+    for (png::uint_32 c = 0; c < image.get_height(); ++c){
+      
+      Color final_color = Color(0.0,0.0,0.0);
+      Color refatt = Color(1.0,1.0,1.0);
+      int level = 6;
+      final_color = rayTrace( Rays[i][height - c -1], final_color, refatt, level);
+      // image[y][x] = png::rgb_pixel(x, y, x + y);
+      RowVector3i rgb = mapColour( final_color );
+      image[i][c] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );
+
+    }
+  } // end of rays
+  image.write("masterwork.png");
   
+
+  // Using PPM:
+  /*
   // start writing out to the file:
   out << "P3 " << endl;
   out << width << " " << height << " 255" << endl;
@@ -507,9 +529,7 @@ void Camera::writeSpheres( const string& out_file ){
       Color refatt = Color(1.0,1.0,1.0);
       int level = 6;
       final_color = rayTrace( Rays[i][height - c -1], final_color, refatt, level);
-      // cout << "pix = " << pix;
       sphere_pixs[i][c] = mapColour( final_color );
-      // cout << "pix[i,j] = " << sphere_pixs[i][c] << endl;
 
     }
   } // end of rays
@@ -522,6 +542,7 @@ void Camera::writeSpheres( const string& out_file ){
   }
   
   out.close();
+  */
 
 }
 

@@ -9,9 +9,14 @@
 #include <string>
 #include <vector>
 #include <limits>
-#include <tuple> 
+#include <tuple>
+
+// Third Party Libraries:
 #include <Eigen/Dense>
 #include <Eigen/Geometry> // for cross product of vectors.
+#include <PNGPP_FILES/png.hpp> // for using png++
+
+// My custom header files:
 #include "ModelObject.h"
 #include "Ray.h"
 #include "Face.h"
