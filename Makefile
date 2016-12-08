@@ -9,7 +9,7 @@ CPPFLAGS	= -Wall -std=c++11 -I. -I./PNG_FILES -Ofast -c $(libpng-config --cflags
 							      					   # above program is that the compiler must be able to find the Eigen header files.
 							      					   # The directory in which you placed Eigen's source code must be in the include path
 							      					   # As well as the PNGPP header files.
-LDFLAGS		= -Wall $(DEBUG) &(libpng-config --ldflags) 
+LDFLAGS		= -Wall $(DEBUG) $(libpng-config --ldflags) 
 EXE 		= raytracer
 
 all: clean raytracer #by default, make my makefile clean up the project directory, just to be safe.
