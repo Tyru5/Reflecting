@@ -8,7 +8,7 @@ res 10000 10000
 ambient 0.0 0.0 0.0
 #lights
 light 3 3 1 1 0.8 0.8 0.8
-light 3 3 -5 1 0.5 0.0 0.5
+light 3 3 -5 1 0.8 0.0 0.8
 #left
 sphere 0.5 2 0 2 1.0 0.0 0.0 1.0 1.0 1.0
 #top
