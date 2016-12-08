@@ -3,3 +3,6 @@ This assignment you now will lighting, material properties and along the way sph
 
 ## 3. Process
 ![Process of assignment](./300px-Ray_trace_diagram.svg.png)
+
+## 4. My Final Rendered Image:
+![MasterWork](./masterwork_show.png)
