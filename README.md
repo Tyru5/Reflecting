@@ -1,5 +1,5 @@
-# Lights-Up
-This assignment you now will lighting, material properties and along the way spheres in addition to polygonal 3D models. Also, unlike before, in this assignment you will be asked to create specifications for scenes of your own design and then demonstrate that your ray casting system is capable of rendering these scenes.
+# Reflecting
+In this final assignment you will be adding reflection, i.e. recursive ray tracing, to your existing ray tracing software. This will include the ability to control the depth of recursion, and selection of lights, materials and models such that the reflections are immediately apparent when viewing image.
 
 ## 3. Process
 ![Process of assignment](./300px-Ray_trace_diagram.svg.png)
