@@ -30,11 +30,11 @@ using Eigen::Vector3d;
 using Eigen::Vector3i;
 using Eigen::RowVector3i;
 
-// Structure that returns best_pt, best_sphere
+// Structure that returns best_pt, best_sphere, best_t
 typedef struct a{
 
 a(): bs( nullptr ), best_t( numeric_limits<double>::infinity() ),
-    best_point( Vector3d() ), ics( false ){};
+    best_point( Vector3d(0.0,0.0,0.0) ), ics( false ){};
   
   Sphere* bs;
   double best_t;
