@@ -118,7 +118,7 @@ int main(int argc, char *argv[]){
     camera.writeSpheresAndModels( argv[2] );
   }
   if( argc == 3 && numSpheres > 0 ){
-    cout << "Spheres" << endl;
+    // cout << "Spheres" << endl;
     camera.writeSpheres( argv[2] );
   }
   if( argc == 3 && numModels > 0 ){
