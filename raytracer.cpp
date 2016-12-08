@@ -75,6 +75,10 @@ int main(int argc, char *argv[]){
   // Instaniating class object(s):
   int numSpheres,numModels;
   Camera camera;
+
+  /* Code to handle P5 master scene 'file' */
+  if(argc == 1){ camera.parseScene("master_scene.txt"); camera.buildRM(); camera.calculateRays(); camera.writeMasterScene(); exit(1);}       
+
   camera.parseScene( argv[1] ); // this function does a whole lot, look at the source code for more details.  
   camera.buildRM();
   camera.calculateRays();
@@ -90,16 +94,15 @@ int main(int argc, char *argv[]){
     camera.rayTriangleIntersection(); // get model stuff
     camera.writeSpheresAndModels( argv[2] );
   }
-  else if( numSpheres > 0 ){
+  if( argc == 3 && numSpheres > 0 ){
     cout << "Spheres" << endl;
     camera.writeSpheres( argv[2] );
   }
-  else if( numModels > 0 ){
+  if( argc == 3 && numModels > 0 ){
     // cout << "Models" << endl;
     camera.rayTriangleIntersection();  
     camera.writeModels( argv[2] );
   }
-
   
   return 0;
 }

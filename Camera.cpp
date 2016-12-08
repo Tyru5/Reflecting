@@ -222,8 +222,12 @@ void Camera::calculateRays(){
     As well as the rays. Get direction of each ray.
   */
 
-  for(int i = 0; i < width; i++){
-    for(int j = 0; j < height; j++){
+  int img_width = int(width);
+  int img_height = int(height);
+  
+#pragma omp parallel for collapse(2)
+  for(int i = 0; i < img_width; i++){
+    for(int j = 0; j < img_height; j++){
       // cout << "i,j" << i << " " << j  << endl;
       
       double px = i/(width-1)  * (right-left) + left;
@@ -273,9 +277,12 @@ void Camera::computeDist( const Face& current_face ){
  
 
   // cout << faces << endl;
+  int img_width = int(width);
+  int img_height = int(height);
   
-  for(int i = 0; i < width; i++){ // for each pixel on the image plane...
-    for(int c = 0; c < height; c++){
+#pragma omp parallel for collapse(2)
+  for(int i = 0; i < img_width; i++){ // for each pixel on the image plane...
+    for(int c = 0; c < img_height; c++){
       
       origin = Rays[i][c].origin;
       // cout << "O = \n" << O << endl;
@@ -436,69 +443,15 @@ RowVector3i Camera::mapColour( const Color &c ){
 
 }
 
-
-void Camera::writeSpheresAndModels( const string& out_file ){
-
-  ofstream out( out_file );
-  if( !out ) cout << "Sorry! Couldn't write out the file: " << out_file << endl;
-
-  sphere_model_pixs = vector< vector<RowVector3i> >(width, vector<RowVector3i>(height, RowVector3i(0,0,0) ) ); // pretty awesome
-  // printPixs();
-  
-  // start writing out to the file:
-  out << "P3 " << endl;
-  out << width << " " << height << " 255" << endl;
-
-  // Map pixel, get only one *very important :: talked with jake*
-  for( int i = 0; i < width; i++){
-    for( int c = 0; c < height; c++){ // for each ray
-
-      // // Spheres first:
-      for(int sp = 0; sp < static_cast<int>(spheres.size()); sp++){
-	
-      	tuple<bool, Color> res = spheres[sp].getRaySphereRGB( Rays[i][height - c -1], ambient_color, lightSource_list );
-      	if( get<0>(res) ){
-      	  sphere_model_pixs[i][c] = mapColour( get<1>(res) );
-      	  // cout << "Sphere pix[i,c] = " << sphere_model_pixs[i][c] << endl;
-      	}
-      }
-
-      // Now model(s):
-      if( ptof[i][c].red != 0.0 && ptof[i][c].green != 0.0  && ptof[i][c].blue != 0.0  ){
-	sphere_model_pixs[i][c] = mapColour( ptof[i][c] );
-      }
-      
-      
-    } 
-  } // end of rays.
-  
-  // printPixs();
-  
-  // now writing out:
-  for(int i = 0; i < width; i++, out << endl){
-    for(int j = 0; j < height; j++){ 
-      // cout << model_pixs[j][i] << " "; // reversed to print out correctly
-      out << sphere_model_pixs[j][i] << " "; // reversed to print out correctly
-    }
-  }
-  
-  out.close();
-
-}
-
-
-void Camera::writeSpheres( const string& out_file ){
-
-  // ofstream out( out_file );
-  // if( !out ) cout << "Sorry! Couldn't write out the file: " << out_file << endl;
-
-  // sphere_pixs = vector< vector<RowVector3i> >(width, vector<RowVector3i>(height, RowVector3i(0,0,0) ) ); // pretty awesome
-  // printPixs();
-
+void Camera::writeMasterScene(){
 
 
   // Using png++:
-  png::image< png::rgb_pixel > image( width, height );
+  int img_width = int(width);
+  int img_height = int(height);
+  png::image< png::rgb_pixel > image( img_width, img_height );
+  
+#pragma omp parallel for collapse(2)
   for (png::uint_32 i = 0; i < image.get_width(); ++i){
     for (png::uint_32 c = 0; c < image.get_height(); ++c){
       
@@ -506,82 +459,85 @@ void Camera::writeSpheres( const string& out_file ){
       Color refatt = Color(1.0,1.0,1.0);
       int level = 6;
       final_color = rayTrace( Rays[i][height - c -1], final_color, refatt, level);
-      // image[y][x] = png::rgb_pixel(x, y, x + y);
       RowVector3i rgb = mapColour( final_color );
       image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );
+      
+    }
+  } // end of rays
+  image.write("masterwork.png");
+  
+}
 
+
+void Camera::writeSpheresAndModels( const string& out_file ){
+
+  // Using png++:
+  png::image< png::rgb_pixel > image( width, height );
+  for (png::uint_32 i = 0; i < image.get_width(); ++i){
+    for (png::uint_32 c = 0; c < image.get_height(); ++c){
+
+      // Spheres first:
+      for(int sp = 0; sp < static_cast<int>(spheres.size()); sp++){
+	tuple<bool, Color> res = spheres[sp].getRaySphereRGB( Rays[i][height - c -1], ambient_color, lightSource_list );
+	
+	if( get<0>(res) ){
+	  RowVector3i rgb = mapColour( get<1>(res) );
+	  image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );
+	}
+	
+      } // end of spheres
+
+      if( ptof[i][c].red != 0.0 && ptof[i][c].green != 0.0  && ptof[i][c].blue != 0.0  ){
+	RowVector3i rgb = mapColour( ptof[i][c] );
+	image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );	
+      } // end of models
+      
     }
   } // end of rays
   image.write( out_file );
   
+}
 
-  // Using PPM:
-  /*
-  // start writing out to the file:
-  out << "P3 " << endl;
-  out << width << " " << height << " 255" << endl;
 
-  // Map pixel, get only one *very important :: talked with jake*
-  for(int i = 0; i < width; i++ ){
-    for(int c = 0; c < height; c++ ){
-      
-      Color final_color = Color(0.0,0.0,0.0);
-      Color refatt = Color(1.0,1.0,1.0);
-      int level = 6;
-      final_color = rayTrace( Rays[i][height - c -1], final_color, refatt, level);
-      sphere_pixs[i][c] = mapColour( final_color );
+void Camera::writeSpheres( const string& out_file ){
 
+  // Using png++:
+  png::image< png::rgb_pixel > image( width, height );
+  for (png::uint_32 i = 0; i < image.get_width(); ++i){
+    for (png::uint_32 c = 0; c < image.get_height(); ++c){
+
+      for(int sp = 0; sp < static_cast<int>(spheres.size()); sp++){
+	
+	tuple<bool, Color> res = spheres[sp].getRaySphereRGB( Rays[i][height - c -1], ambient_color, lightSource_list );
+	if( get<0>(res) ){
+	  RowVector3i rgb = mapColour( get<1>(res) );
+	  image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );
+	}
+	
+      } // end of spheres
     }
   } // end of rays
-
-  // now writing out:
-  for(int i = 0; i < width; i++, out << endl){
-    for(int j = 0; j < height; j++){
-      out << sphere_pixs[j][i] << " "; // reversed to print out correctly
-    }
-  }
+  image.write( out_file );
   
-  out.close();
-  */
-
 }
 
 
 void Camera::writeModels( const string& out_file ){
 
-  ofstream out( out_file );
-  if( !out ) cout << "Sorry! Couldn't write out the file: " << out_file << endl;
+  // Using png++:
+  png::image< png::rgb_pixel > image( width, height );
+  for (png::uint_32 i = 0; i < image.get_width(); ++i){
+    for (png::uint_32 c = 0; c < image.get_height(); ++c){
 
-  model_pixs = vector< vector<RowVector3i> >(width, vector<RowVector3i>(height, RowVector3i(0,0,0) ) ); // pretty awesome
-  // printPixs();
-  
-  // start writing out to the file:
-  out << "P3 " << endl;
-  out << width << " " << height << " 255" << endl;
-
-  // Map pixel, get only one *very important :: talked with jake*
-  for( int i = 0; i < width; i++){
-    for( int c = 0; c < height; c++){ // for each ray
-      
       if( ptof[i][c].red != 0.0 && ptof[i][c].green != 0.0  && ptof[i][c].blue != 0.0  ){
-	model_pixs[i][c] = mapColour( ptof[i][c] );
+	RowVector3i rgb = mapColour( ptof[i][c] );
+	image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );	
       }
-      
-    } 
-  } // end of rays.
 
-  // printPixs();
-  
-  // now writing out:
-  for(int i = 0; i < width; i++, out << endl){
-    for(int j = 0; j < height; j++){ 
-      // cout << model_pixs[j][i] << " "; // reversed to print out correctly
-      out << model_pixs[j][i] << " "; // reversed to print out correctly
     }
-  }
+  } // end of rays
+  image.write( out_file );
   
-  out.close();
-
 }
 
 
@@ -642,12 +598,12 @@ Color Camera::rayTrace( const Ray& ray, Color& accum, Color& refatt, int level){
   */
 
   /*
-  bestSphere ret = {
+    bestSphere ret = {
     nullptr,  // sphere
     numeric_limits<double>::infinity(),// best_t
     Vector3d(0.0,0.0,0.0), // best_point
     false,  // ics
-  };
+    };
   */
 
 
@@ -714,18 +670,6 @@ Color Camera::rayTrace( const Ray& ray, Color& accum, Color& refatt, int level){
 }
 
 // ==================HELPER FUNCTIONS=========================
-
-// pa4
-void Camera::printPixs() const{
-  
-  for(int i = 0; i < width; i++){
-    for(int c = 0; c < height; c++){
-      cout << model_pixs[i][c] << " ";
-    }
-    cout << endl;
-  }
-
-}
 
 void Camera::print_ptof(){
   for(int i =  0; i < width; i++){

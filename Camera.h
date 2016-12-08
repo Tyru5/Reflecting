@@ -10,6 +10,7 @@
 #include <vector>
 #include <limits>
 #include <tuple>
+#include <omp.h>
 
 // Third Party Libraries:
 #include <Eigen/Dense>
@@ -65,17 +66,18 @@ class Camera{
 
   // Where the magic happens:  
   RowVector3i mapColour(const Color& bc);
+  void writeMasterScene();
   void writeSpheresAndModels( const string& out_file );
   void writeSpheres(const string& out_file);
   void writeModels( const string& out_file );
-  void printPixs() const;
-  
+ 
   void rayTriangleIntersection();
   void computeDist( const Face& current_face );
 
   void closestIntersect( const Ray& ray, Sphere& current_sphere, bestSphere& ret );
   void find_rayBSPH( const Ray& ray, bestSphere& ret );
 
+  /* Where all the magic happens! */
   Color rayTrace( const Ray& ray, Color& accum, Color& refatt, int level);
 
   void print_ptof();
@@ -144,13 +146,6 @@ class Camera{
   // 2d array to hold all t's:
   vector< vector< double > > ts;
   vector< vector< Color > > ptof;
-
-  vector< vector< RowVector3i> > sphere_pixs;
-  vector< vector< RowVector3i> > model_pixs;
-  vector< vector< RowVector3i> > sphere_model_pixs;
-
-  double tmin = numeric_limits<double>::max(); // max double
-  double tmax = numeric_limits<double>::min(); // min double
 
   // ambient illumination in the scene:
   Color ambient_color;
