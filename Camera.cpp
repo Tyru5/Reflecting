@@ -280,7 +280,6 @@ void Camera::computeDist( const Face& current_face ){
   int img_width = int(width);
   int img_height = int(height);
   
-#pragma omp parallel for collapse(2)
   for(int i = 0; i < img_width; i++){ // for each pixel on the image plane...
     for(int c = 0; c < img_height; c++){
       
@@ -478,8 +477,8 @@ void Camera::writeSpheresAndModels( const string& out_file ){
 
       // Spheres first:
       for(int sp = 0; sp < static_cast<int>(spheres.size()); sp++){
+
 	tuple<bool, Color> res = spheres[sp].getRaySphereRGB( Rays[i][height - c -1], ambient_color, lightSource_list );
-	
 	if( get<0>(res) ){
 	  RowVector3i rgb = mapColour( get<1>(res) );
 	  image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );
@@ -487,9 +486,10 @@ void Camera::writeSpheresAndModels( const string& out_file ){
 	
       } // end of spheres
 
+      // Now model(s)
       if( ptof[i][c].red != 0.0 && ptof[i][c].green != 0.0  && ptof[i][c].blue != 0.0  ){
-	RowVector3i rgb = mapColour( ptof[i][c] );
-	image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );	
+      	RowVector3i rgb = mapColour( ptof[i][c] );
+      	image[c][i] = png::rgb_pixel( rgb(0), rgb(1), rgb(2) );	
       } // end of models
       
     }
