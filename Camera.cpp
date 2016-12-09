@@ -442,6 +442,8 @@ RowVector3i Camera::mapColour( const Color &c ){
 
 }
 
+// =======================START MEMBER FUNCTIONS TO WRITE IMAGES OUT=======================
+
 void Camera::writeMasterScene(){
 
 
@@ -540,6 +542,7 @@ void Camera::writeModels( const string& out_file ){
   
 }
 
+// ========================== END OF WRITING IMAGES OUT ====================================
 
 void Camera::closestIntersect( const Ray& ray, Sphere& current_sphere, bestSphere& ret ){
 
