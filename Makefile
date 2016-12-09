@@ -60,4 +60,4 @@ clean:
 
 package:
 	@echo "Packaging up project directory..."
-	tar -cvf pa5.tar *.cpp *.h ./Eigen Makefile *.txt *.mtl *.obj
+	tar -cvf pa5.tar *.cpp *.h ./Eigen ./PNG_FILES Makefile *.txt *.mtl *.obj
