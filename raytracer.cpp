@@ -1,9 +1,4 @@
-// PA5 Assignment
 // Author: Tyrus Malmstrom
-// Date  : 11/29/2016
-// Class : CS410
-// Email : tyrus.alexander.malmstrom@gmail.com
-// 'Reflecting'
 
 /*
 
@@ -11,7 +6,7 @@
 
 In building my raytracer for this assignment, I used a third party library called Eigen.
 
-As taken from their official webpage, 
+As taken from their official webpage,
 "Eigen is a C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms."
 
 Furthermore, Here is a general overview of Eigen:
@@ -52,7 +47,7 @@ Furthermore, Here is a general overview of Eigen:
 
 I also used another third party library called Tiny obj Loader.
 
-As taken from their official webpage, 
+As taken from their official webpage,
 "Tiny but powerful single file wavefront obj loader written in C++. No dependency except for C++ STL. It can parse 10M over polygons with moderate memory and time."
 
 ~More information may be found here: https://syoyo.github.io/tinyobjloader/
@@ -62,18 +57,18 @@ As taken from their official webpage,
 
 Lastly, I also used another third party library called png++. I used this library to convert my ppm images into png images.
 
-As taken from their official webpage, 
+As taken from their official webpage,
 "This is the home of png++, a C++ wrapper for libpng library." PNG++ aims to provide simple yet powerful C++ interface to libpng, the PNG reference implementation library.
 
                                           ~Overview~
-- Using raw libpng in C++ may impose serious challenge since lots of precautions must be taken to handle initialization/deinitialization of control structures as well as handling errors correctly. 
+- Using raw libpng in C++ may impose serious challenge since lots of precautions must be taken to handle initialization/deinitialization of control structures as well as handling errors correctly.
   With png++ you can read or write PNG images just in a single line of C++ code:
 
   ->png::image< png::rgb_pixel > image("input.png");
   image.write("output.png");
   The code reads an image from the file named "input.png", then writes the image to a file named "output.png". In this example png++ does all the transformations needed to create adequate in-memory RGB representation of the image (well, in most cases it simply instructs libpng to do so).
 
-  The image in "input.png" can be RGB image, or it might be grayscale or even indexed image with a palette -- png++ will just convert any input to RGB format. 
+  The image in "input.png" can be RGB image, or it might be grayscale or even indexed image with a palette -- png++ will just convert any input to RGB format.
   However, for technical reasons such automatic transformation is supported for RGB and Grayscale color types only. Optionally there may be an alpha channel in the target color space (RGBA and Gray+Alpha respectively).
 
 ~More information may be found here: http://www.nongnu.org/pngpp/
@@ -83,7 +78,7 @@ Best,
 Tyrus Malmstrom.
 
 ~Awesome~
-  
+
 */
 
 // include headers:
@@ -93,39 +88,52 @@ Tyrus Malmstrom.
 
 using namespace std;
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
 
   // Instaniating class object(s):
-  int numSpheres,numModels;
+  int numSpheres;
+  int numModels;
+
   Camera camera;
 
   /* Code to handle P5 master scene 'file' */
-  if(argc == 1){ camera.parseScene("master_scene.txt"); camera.buildRM(); camera.calculateRays(); camera.writeMasterScene();exit(1);}       
+  if (argc == 1)
+  {
+    camera.parseScene("master_scene.txt");
+    camera.buildRM();
+    camera.calculateRays();
+    camera.writeMasterScene();
+    exit(1);
+  }
 
-  camera.parseScene( argv[1] ); // this function does a whole lot, look at the source code for more details.  
+  camera.parseScene(argv[1]);
   camera.buildRM();
   camera.calculateRays();
 
   numSpheres = camera.numberOfSpheres();
   // cout << "main numSpheres = " << numSpheres << endl;
-  numModels  = camera.numberOfModels();
+  numModels = camera.numberOfModels();
   // cout << "main numModels = " << numModels << endl;
 
   // 'special' case for scene4:
-  if( numSpheres == 2 && numModels == 1 ){
+  if (numSpheres == 2 && numModels == 1)
+  {
     // cout << "Sphere and Model " << endl;
     camera.rayTriangleIntersection(); // get model stuff
-    camera.writeSpheresAndModels( argv[2] );
+    camera.writeSpheresAndModels(argv[2]);
   }
-  else if( argc == 3 && numSpheres > 0 ){
+  else if (argc == 3 && numSpheres > 0)
+  {
     // cout << "Spheres" << endl;
-    camera.writeSpheres( argv[2] );
+    camera.writeSpheres(argv[2]);
   }
-  else if( argc == 3 && numModels > 0 ){
+  else if (argc == 3 && numModels > 0)
+  {
     // cout << "Models" << endl;
-    camera.rayTriangleIntersection();  
-    camera.writeModels( argv[2] );
+    camera.rayTriangleIntersection();
+    camera.writeModels(argv[2]);
   }
-  
+
   return 0;
 }
